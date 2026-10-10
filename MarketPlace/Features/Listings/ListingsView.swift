@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ListingsView: View {
     @Environment(ListingRepository.self) private var repository
+    @Environment(SyncEngine.self) private var syncEngine
     @State private var viewModel = ListingsViewModel()
     @State private var showEditor = false
 
@@ -29,6 +30,9 @@ struct ListingsView: View {
             ListingDetailView(listingID: id)
         }
         .searchable(text: $viewModel.searchText, prompt: "Search titles")
+        .refreshable {
+            await syncEngine.sync()
+        }
         .toolbar {
             Button {
                 showEditor = true

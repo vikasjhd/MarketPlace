@@ -13,6 +13,7 @@ struct ListingRow: View {
                 Text(listing.category.displayName)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                SyncBadge(state: listing.syncState)
             }
             Spacer()
             if listing.isFavorite {

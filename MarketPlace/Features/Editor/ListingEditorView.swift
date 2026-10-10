@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ListingEditorView: View {
     @Environment(ListingRepository.self) private var repository
+    @Environment(SyncEngine.self) private var syncEngine
     @Environment(\.imageFileStore) private var fileStore
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: ListingEditorViewModel
@@ -139,6 +140,7 @@ struct ListingEditorView: View {
             await run {
                 if try await viewModel.save(to: repository, fileStore: fileStore) {
                     dismiss()
+                    await syncEngine.sync()
                 }
             }
         }

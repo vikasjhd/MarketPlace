@@ -1,6 +1,9 @@
 import Foundation
 
 actor ImageFileStore {
+    // The one store the app uses. Tests make their own with a temp folder.
+    static let app = ImageFileStore(folder: URL.applicationSupportDirectory.appending(path: "ListingImages"))
+
     private let folder: URL
 
     init(folder: URL) {

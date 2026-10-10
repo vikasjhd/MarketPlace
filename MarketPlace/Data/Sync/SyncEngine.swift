@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 
 @MainActor
 @Observable
@@ -68,6 +69,7 @@ final class SyncEngine {
             status = .idle
         } catch {
             // Offline, server errors and bad responses: listings stay pending and are retried next time.
+            Log.sync.error("Sync stopped: \(String(describing: error))")
             status = .error("Couldn't reach the server.")
         }
     }

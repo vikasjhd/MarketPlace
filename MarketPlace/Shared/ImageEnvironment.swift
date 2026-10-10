@@ -1,9 +1,7 @@
 import SwiftUI
 
 private struct ImageFileStoreKey: EnvironmentKey {
-    static let defaultValue = ImageFileStore(
-        folder: URL.applicationSupportDirectory.appending(path: "ListingImages")
-    )
+    static let defaultValue = ImageFileStore.app
 }
 
 private struct ImageLoaderKey: EnvironmentKey {
