@@ -1,0 +1,13 @@
+# Xcode
+xcuserdata/
+DerivedData/
+build/
+*.xcuserstate
+.DS_Store
+
+# Local only, not for reviewers
+AGENTS.md
+CLAUDE.md
+docs/PLAN.md
+docs/Assignment.pdf
+docs/NOTES.md

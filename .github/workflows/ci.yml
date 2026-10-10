@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-build-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The project needs a recent Xcode, so use the newest one on the runner.
+      - name: Select newest Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Lint
+        run: swiftlint lint --strict
+
+      # Simulator names change between runner images, so take the first available iPhone.
+      - name: Build and test
+        run: |
+          UDID=$(xcrun simctl list devices available | grep -m1 "iPhone" | grep -oE "[0-9A-F-]{36}")
+          xcodebuild test \
+            -project MarketPlace.xcodeproj \
+            -scheme MarketPlace \
+            -destination "id=$UDID" \
+            CODE_SIGNING_ALLOWED=NO
