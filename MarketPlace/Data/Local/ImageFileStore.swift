@@ -7,7 +7,11 @@ actor ImageFileStore {
         self.folder = folder
     }
 
-    func save(_ jpeg: Data) throws -> String {
+    // Downsamples first, so a full-size photo is never stored.
+    func save(_ imageData: Data) throws -> String {
+        guard let jpeg = ImageDownsampler.downsample(imageData, maxPixelSize: 1600) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let filename = "\(UUID().uuidString).jpg"
         try jpeg.write(to: folder.appending(path: filename), options: .atomic)

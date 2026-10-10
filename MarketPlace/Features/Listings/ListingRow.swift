@@ -5,6 +5,7 @@ struct ListingRow: View {
 
     var body: some View {
         HStack {
+            ThumbnailView(image: listing.images.first, pointSize: 60)
             VStack(alignment: .leading, spacing: 4) {
                 Text(listing.title)
                     .font(.headline)

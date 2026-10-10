@@ -20,6 +20,9 @@ struct ListingDetailView: View {
         let isMine = listing.ownerID == Listing.currentUserID
 
         return ScrollView {
+            if !listing.images.isEmpty {
+                gallery(listing.images)
+            }
             info(for: listing, isMine: isMine)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
@@ -51,6 +54,17 @@ struct ListingDetailView: View {
         } message: {
             Text(errorMessage)
         }
+    }
+
+    private func gallery(_ images: [ListingImage]) -> some View {
+        TabView {
+            ForEach(images) { image in
+                ThumbnailView(image: image, pointSize: 300)
+            }
+        }
+        .tabViewStyle(.page)
+        .indexViewStyle(.page(backgroundDisplayMode: .always))
+        .frame(height: 320)
     }
 
     private func info(for listing: Listing, isMine: Bool) -> some View {
