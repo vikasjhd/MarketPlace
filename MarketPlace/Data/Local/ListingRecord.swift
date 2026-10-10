@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 
+// The database row for a listing (SwiftData). Only the repository uses it.
 @Model
 final class ListingRecord {
     @Attribute(.unique) var id: UUID
@@ -18,6 +19,7 @@ final class ListingRecord {
     var syncState: SyncState
     var syncError: String?
 
+    // Makes a database row from a Listing.
     init(listing: Listing) throws {
         id = listing.id
         title = listing.title
@@ -34,14 +36,17 @@ final class ListingRecord {
         syncError = listing.syncError
     }
 
+    // Reads the photo list from its JSON.
     func images() throws -> [ListingImage] {
         try JSONDecoder().decode([ListingImage].self, from: imagesData)
     }
 
+    // Saves the photo list as JSON.
     func setImages(_ images: [ListingImage]) throws {
         imagesData = try JSONEncoder().encode(images)
     }
 
+    // Turns the row into the Listing struct the app uses.
     func toListing() throws -> Listing {
         Listing(
             id: id,

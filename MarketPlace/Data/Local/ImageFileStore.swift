@@ -1,5 +1,6 @@
 import Foundation
 
+// Saves, reads and deletes the user's own photo files. An actor, so file work runs off the main thread.
 actor ImageFileStore {
     // The one store the app uses. Tests make their own with a temp folder.
     static let app = ImageFileStore(folder: URL.applicationSupportDirectory.appending(path: "ListingImages"))
@@ -21,6 +22,7 @@ actor ImageFileStore {
         return filename
     }
 
+    // Reads a photo file.
     func read(_ filename: String) throws -> Data {
         try Data(contentsOf: folder.appending(path: filename))
     }

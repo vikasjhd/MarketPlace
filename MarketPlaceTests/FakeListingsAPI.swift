@@ -1,16 +1,19 @@
 import Foundation
 @testable import MarketPlace
 
+// Fake server for tests: records calls and returns set results.
 actor FakeListingsAPI: ListingsAPI {
     private(set) var calls: [String] = []
     private var saveError: APIError?
     private var changesResponse = ChangesResponse(listings: [], latestRevision: 0)
     private var nextRevision = 1
 
+    // Makes create and update throw this error.
     func setSaveError(_ error: APIError?) {
         saveError = error
     }
 
+    // Sets what the next pull returns.
     func setChanges(_ response: ChangesResponse) {
         changesResponse = response
     }
@@ -35,6 +38,7 @@ actor FakeListingsAPI: ListingsAPI {
         return changesResponse
     }
 
+    // Pretends to save: gives the listing the next revision, or throws the set error.
     private func save(_ dto: ListingDTO) throws -> ListingDTO {
         if let saveError {
             throw saveError

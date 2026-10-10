@@ -3,10 +3,12 @@ import Observation
 import PhotosUI
 import SwiftUI
 
+// State and actions for the editor: the draft, photos, validation and save.
 @MainActor
 @Observable
 final class ListingEditorViewModel {
     var draft: ListingDraft
+    // Validation problems from the last Save tap.
     private(set) var issues: [ValidationIssue] = []
 
     // nil means we are creating a new listing.
@@ -15,6 +17,7 @@ final class ListingEditorViewModel {
     @ObservationIgnored private var addedFilenames: [String] = []
     @ObservationIgnored private var removedFilenames: [String] = []
 
+    // Fills the draft from the listing when editing, or starts empty.
     init(listing: Listing?) {
         listingID = listing?.id
         if let listing {
@@ -30,18 +33,22 @@ final class ListingEditorViewModel {
         }
     }
 
+    // True when creating, false when editing.
     var isNew: Bool {
         listingID == nil
     }
 
+    // How many more photos can be added.
     var photosLeft: Int {
         max(0, ListingValidator.maxImages - draft.images.count)
     }
 
+    // The error text for one field, if any.
     func message(for field: ValidationIssue.Field) -> String? {
         issues.first { $0.field == field }?.message
     }
 
+    // Loads photos chosen in the photo picker and saves them.
     func addPhotos(_ items: [PhotosPickerItem], fileStore: ImageFileStore) async throws {
         for item in items {
             if let data = try await item.loadTransferable(type: Data.self) {
@@ -50,6 +57,7 @@ final class ListingEditorViewModel {
         }
     }
 
+    // Saves one photo (downsampled) and adds it to the draft.
     func addPhoto(_ data: Data, fileStore: ImageFileStore) async throws {
         guard photosLeft > 0 else { return }
         let filename = try await fileStore.save(data)
@@ -57,6 +65,7 @@ final class ListingEditorViewModel {
         draft.images.append(ListingImage(id: UUID(), localFilename: filename, remoteURL: nil))
     }
 
+    // Removes a photo from the draft. Its file is deleted after Save.
     func removePhoto(_ image: ListingImage) {
         draft.images.removeAll { $0.id == image.id }
         if let filename = image.localFilename {
@@ -81,6 +90,7 @@ final class ListingEditorViewModel {
         return true
     }
 
+    // Deletes photo files added in this editor, because they won't be used.
     func cancel(fileStore: ImageFileStore) async {
         for filename in addedFilenames {
             await fileStore.delete(filename)

@@ -2,9 +2,11 @@ import Foundation
 import Observation
 import os
 
+// Sends pending listings to the server, then downloads server changes.
 @MainActor
 @Observable
 final class SyncEngine {
+    // What the status bar shows about sync.
     enum Status: Equatable {
         case idle
         case syncing
@@ -12,6 +14,7 @@ final class SyncEngine {
         case error(String)
     }
 
+    // Current sync status, shown in the UI.
     private(set) var status: Status = .idle
 
     @ObservationIgnored private let repository: ListingRepository
@@ -19,11 +22,14 @@ final class SyncEngine {
     @ObservationIgnored private let connectivity: any Connectivity
     @ObservationIgnored private let fileStore: ImageFileStore
     @ObservationIgnored private let defaults: UserDefaults
+    // Used to stop two syncs from running at the same time.
     @ObservationIgnored private var isRunning = false
     @ObservationIgnored private var runAgain = false
 
+    // UserDefaults key for the last pulled revision.
     private static let cursorKey = "lastPulledRevision"
 
+    // Everything is passed in, so tests can use fakes.
     init(
         repository: ListingRepository,
         api: any ListingsAPI,
@@ -38,6 +44,7 @@ final class SyncEngine {
         self.defaults = defaults
     }
 
+    // Runs a sync. Safe to call from anywhere, any number of times.
     func sync() async {
         // If a sync is already running, ask it for one more round instead of starting a second one.
         if isRunning {
@@ -52,6 +59,7 @@ final class SyncEngine {
         isRunning = false
     }
 
+    // One round: push every pending listing, then pull.
     private func runOnce() async {
         guard connectivity.isOnline else {
             status = .offline
@@ -114,6 +122,7 @@ final class SyncEngine {
         }
     }
 
+    // Downloads changes since the last pull and saves them.
     private func pull() async throws {
         let since = defaults.integer(forKey: Self.cursorKey)
         let response = try await api.changes(since: since)

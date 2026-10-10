@@ -1,6 +1,7 @@
 import XCTest
 @testable import MarketPlace
 
+// Tests for the sync rules, using a fake API and an in-memory database.
 @MainActor
 final class SyncEngineTests: XCTestCase {
     private var repository: ListingRepository!
@@ -10,6 +11,7 @@ final class SyncEngineTests: XCTestCase {
     private var tempFolder: URL!
     private var defaultsName: String!
 
+    // Fresh objects for every test.
     override func setUp() async throws {
         repository = try ListingRepository(inMemory: true)
         api = FakeListingsAPI()
@@ -26,6 +28,7 @@ final class SyncEngineTests: XCTestCase {
         )
     }
 
+    // Removes the temp folder and test settings.
     override func tearDown() async throws {
         try? FileManager.default.removeItem(at: tempFolder)
         UserDefaults().removePersistentDomain(forName: defaultsName)
@@ -95,6 +98,7 @@ final class SyncEngineTests: XCTestCase {
         XCTAssertEqual(saved?.syncState, .pending)
     }
 
+    // A simple valid draft.
     private func makeDraft() -> ListingDraft {
         ListingDraft(title: "Chair", details: "", priceText: "500", category: .furniture, images: [])
     }

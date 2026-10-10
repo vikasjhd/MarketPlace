@@ -1,13 +1,16 @@
 import SwiftUI
 
+// App entry point. Creates the shared objects and passes them to the views.
 @main
 struct MarketPlaceApp: App {
+    // Id of the background refresh task (also listed in Info.plist).
     static let backgroundSyncID = "com.vikassaini.MarketPlace.sync"
 
     @State private var repository: ListingRepository
     @State private var networkMonitor: NetworkMonitor
     @State private var syncEngine: SyncEngine
 
+    // Creates the database, network monitor and sync engine once at launch.
     init() {
         let repository: ListingRepository
         do {

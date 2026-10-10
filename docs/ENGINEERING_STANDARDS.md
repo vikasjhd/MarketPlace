@@ -30,7 +30,7 @@ The rules this project follows. Short version: keep it simple, keep it readable,
 - Dependencies inside `@Observable` classes are `@ObservationIgnored private let`.
 - `.onChange(of:)` uses the two-parameter form.
 - Plain, readable code over clever code.
-- Comments: one short line that explains why, not what.
+- Comments: one short line above each type and each non-obvious function, saying what it is and does. A short "why" line where a choice isn't obvious. No comments on obvious lines.
 
 ## Concurrency
 

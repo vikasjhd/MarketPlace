@@ -4,15 +4,19 @@ import UIKit
 
 // A fake backend that runs inside the app. MockURLProtocol sends every request here.
 final class MockServer: Sendable {
+    // Host name the app sends requests to.
     static let host = "mock.marketplace.local"
+    // The one server the app uses.
     static let shared = MockServer(folder: URL.applicationSupportDirectory.appending(path: "MockServer"))
 
+    // What the server answers: status code, body and content type.
     struct Response {
         let status: Int
         let body: Data
         let contentType: String
     }
 
+    // Everything the server keeps. Saved as JSON.
     private struct State: Codable {
         var listings: [ListingDTO]
         var latestRevision: Int
@@ -22,6 +26,7 @@ final class MockServer: Sendable {
     private let folder: URL
     private let state: OSAllocatedUnfairLock<State>
 
+    // Loads saved state, or creates 200 sample listings on first start.
     init(folder: URL) {
         self.folder = folder
         let stateFile = folder.appending(path: "state.json")
@@ -39,6 +44,7 @@ final class MockServer: Sendable {
         }
     }
 
+    // Entry point for every request: picks the endpoint from the method and path.
     func handle(method: String, url: URL, headers: [String: String], body: Data) -> Response {
         let parts = Array(url.pathComponents.dropFirst())
         let isImageDownload = method == "GET" && parts.first == "images"
@@ -71,11 +77,13 @@ final class MockServer: Sendable {
         }
     }
 
+    // GET /auth/token: gives out the dev token.
     private func tokenResponse() -> Response {
         let token = state.withLock { $0.token }
         return jsonResponse(status: 200, TokenResponse(token: token, userID: Listing.currentUserID))
     }
 
+    // GET /listings: listings with a revision newer than sinceRevision.
     private func changesResponse(url: URL) -> Response {
         let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems
         let since = Int(query?.first { $0.name == "sinceRevision" }?.value ?? "") ?? 0
@@ -89,6 +97,7 @@ final class MockServer: Sendable {
         return jsonResponse(status: 200, response)
     }
 
+    // POST and PUT /listings: validates, applies last write wins, saves.
     // Used for both POST and PUT, so a retried POST can't create a duplicate.
     private func saveListing(body: Data) -> Response {
         guard let incoming = try? JSONDecoder.api.decode(ListingDTO.self, from: body) else {
@@ -118,6 +127,7 @@ final class MockServer: Sendable {
         }
     }
 
+    // PUT /images/{id}: saves the photo file and returns its URL.
     private func uploadImage(idText: String, body: Data) -> Response {
         guard let id = UUID(uuidString: idText), !body.isEmpty else {
             return errorResponse(status: 400, message: "Bad image.")
@@ -131,6 +141,7 @@ final class MockServer: Sendable {
         return jsonResponse(status: 200, UploadResponse(url: Self.imageURL(id: id)))
     }
 
+    // GET /images/{id}: returns an uploaded photo, or draws one for sample listings.
     private func imageResponse(id: UUID) -> Response {
         if let data = try? Data(contentsOf: imageFile(id: id)) {
             return Response(status: 200, body: data, contentType: "image/jpeg")
@@ -145,6 +156,7 @@ final class MockServer: Sendable {
         return Response(status: 200, body: data, contentType: "image/jpeg")
     }
 
+    // The URL where a photo can be downloaded.
     static func imageURL(id: UUID) -> URL {
         var components = URLComponents()
         components.scheme = "https"
@@ -153,14 +165,17 @@ final class MockServer: Sendable {
         return components.url ?? URL(fileURLWithPath: "/")
     }
 
+    // Folder for uploaded photo files.
     private var imagesFolder: URL {
         folder.appending(path: "images")
     }
 
+    // File path of one uploaded photo.
     private func imageFile(id: UUID) -> URL {
         imagesFolder.appending(path: "\(id.uuidString).jpg")
     }
 
+    // True when the request has the right Bearer token.
     private func isAuthorized(_ headers: [String: String]) -> Bool {
         let token = state.withLock { $0.token }
         return headers["Authorization"] == "Bearer \(token)"
@@ -186,11 +201,13 @@ final class MockServer: Sendable {
         }
     }
 
+    // Builds a JSON answer.
     private func jsonResponse<T: Encodable>(status: Int, _ value: T) -> Response {
         let body = (try? JSONEncoder.api.encode(value)) ?? Data()
         return Response(status: status, body: body, contentType: "application/json")
     }
 
+    // Builds an error answer with a message.
     private func errorResponse(status: Int, message: String) -> Response {
         jsonResponse(status: status, ErrorResponse(message: message))
     }

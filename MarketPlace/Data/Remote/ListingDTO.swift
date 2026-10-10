@@ -1,5 +1,6 @@
 import Foundation
 
+// The listing as JSON, the way the server sends and receives it.
 struct ListingDTO: Codable, Equatable, Sendable {
     let id: UUID
     var title: String
@@ -14,25 +15,30 @@ struct ListingDTO: Codable, Equatable, Sendable {
     var revision: Int?
 }
 
+// One photo in the server's JSON: its id and URL.
 struct ImageDTO: Codable, Equatable, Sendable {
     let id: UUID
     let url: URL
 }
 
+// Answer to a pull: changed listings and the newest revision number.
 struct ChangesResponse: Codable, Sendable {
     let listings: [ListingDTO]
     let latestRevision: Int
 }
 
+// Answer from /auth/token.
 struct TokenResponse: Codable, Sendable {
     let token: String
     let userID: String
 }
 
+// Answer after a photo upload: where the photo now lives.
 struct UploadResponse: Codable, Sendable {
     let url: URL
 }
 
+// Error body the server sends with 4xx answers.
 struct ErrorResponse: Codable, Sendable {
     let message: String
 }
@@ -54,6 +60,7 @@ extension ListingDTO {
         revision = listing.revision
     }
 
+    // Turns server JSON into a Listing marked as synced.
     func toListing() -> Listing {
         Listing(
             id: id,

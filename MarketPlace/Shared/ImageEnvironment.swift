@@ -1,9 +1,11 @@
 import SwiftUI
 
+// Lets views get the photo store with @Environment(\.imageFileStore).
 private struct ImageFileStoreKey: EnvironmentKey {
     static let defaultValue = ImageFileStore.app
 }
 
+// Lets views get the image loader with @Environment(\.imageLoader).
 private struct ImageLoaderKey: EnvironmentKey {
     static let defaultValue = ImageLoader(
         fileStore: ImageFileStoreKey.defaultValue,

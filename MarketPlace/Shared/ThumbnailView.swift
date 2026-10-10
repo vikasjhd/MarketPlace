@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Shows one listing photo at a fixed size, or a placeholder.
 struct ThumbnailView: View {
     let image: ListingImage?
     let pointSize: CGFloat

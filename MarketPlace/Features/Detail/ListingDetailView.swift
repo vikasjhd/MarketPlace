@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Shows one listing: photos, details, favorite and edit buttons.
 struct ListingDetailView: View {
     let listingID: UUID
 
@@ -16,6 +17,7 @@ struct ListingDetailView: View {
         }
     }
 
+    // The screen for a listing that exists.
     private func content(for listing: Listing) -> some View {
         let isMine = listing.ownerID == Listing.currentUserID
 
@@ -56,6 +58,7 @@ struct ListingDetailView: View {
         }
     }
 
+    // Swipeable photos.
     private func gallery(_ images: [ListingImage]) -> some View {
         TabView {
             ForEach(images) { image in
@@ -67,6 +70,7 @@ struct ListingDetailView: View {
         .frame(height: 320)
     }
 
+    // Title, price, description, seller and dates.
     private func info(for listing: Listing, isMine: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(listing.title)
@@ -92,6 +96,7 @@ struct ListingDetailView: View {
         }
     }
 
+    // Shown when the server rejected this listing.
     private func failedSection(message: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(message, systemImage: "exclamationmark.triangle")
@@ -102,6 +107,7 @@ struct ListingDetailView: View {
         }
     }
 
+    // Flips favorite, and shows an alert if saving fails.
     private func toggleFavorite() {
         do {
             try repository.toggleFavorite(id: listingID)

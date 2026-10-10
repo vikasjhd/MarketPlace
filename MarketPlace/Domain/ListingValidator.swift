@@ -1,6 +1,8 @@
 import Foundation
 
+// One problem with the form, tied to the field it belongs to.
 struct ValidationIssue: Equatable, Sendable {
+    // The form fields that can have an error.
     enum Field: Equatable, Sendable {
         case title
         case details
@@ -12,12 +14,15 @@ struct ValidationIssue: Equatable, Sendable {
     let message: String
 }
 
+// Checks a draft before it is saved. Pure logic, no UI.
 struct ListingValidator {
+    // Limits shared by the editor and the mock server.
     static let titleMaxLength = 80
     static let detailsMaxLength = 1000
     static let maxPriceCents = 100_000_000
     static let maxImages = 3
 
+    // Returns every problem in the draft. An empty list means it is valid.
     static func validate(_ draft: ListingDraft) -> [ValidationIssue] {
         var issues: [ValidationIssue] = []
 
@@ -71,6 +76,7 @@ struct ListingValidator {
         return rupees * 100 + paise
     }
 
+    // True when the text is not empty and has only 0-9.
     private static func isDigits(_ text: String) -> Bool {
         !text.isEmpty && text.allSatisfy { $0 >= "0" && $0 <= "9" }
     }

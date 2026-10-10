@@ -1,9 +1,11 @@
 import UIKit
 
+// Gives views images at the size they need, with a memory cache and a disk cache.
 actor ImageLoader {
     private let fileStore: ImageFileStore
     private let session: URLSession
     private let cacheFolder: URL
+    // Decoded images in memory. iOS clears it when memory is low.
     private let cache = NSCache<NSString, UIImage>()
 
     init(fileStore: ImageFileStore, session: URLSession, cacheFolder: URL) {
@@ -13,6 +15,7 @@ actor ImageLoader {
         cache.totalCostLimit = 40 * 1024 * 1024
     }
 
+    // Returns the image at this pixel size, or nil if it can't be loaded.
     func image(for image: ListingImage, pixelSize: Int) async -> UIImage? {
         let key = "\(image.id.uuidString)-\(pixelSize)" as NSString
         if let cached = cache.object(forKey: key) {

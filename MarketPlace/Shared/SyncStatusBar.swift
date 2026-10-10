@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Bar at the bottom that shows the sync state, with Retry after an error.
 struct SyncStatusBar: View {
     @Environment(SyncEngine.self) private var syncEngine
     @Environment(ListingRepository.self) private var repository
@@ -15,6 +16,7 @@ struct SyncStatusBar: View {
         .background(.bar)
     }
 
+    // Picks the message: offline first, then syncing, error, failed, pending, up to date.
     @ViewBuilder
     private var content: some View {
         let pending = repository.pendingCount

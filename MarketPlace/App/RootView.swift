@@ -2,6 +2,7 @@ import BackgroundTasks
 import os
 import SwiftUI
 
+// Top-level view: the list, the status bar, and all sync triggers.
 struct RootView: View {
     @Environment(ListingRepository.self) private var repository
     @Environment(SyncEngine.self) private var syncEngine

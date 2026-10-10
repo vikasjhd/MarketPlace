@@ -2,14 +2,17 @@ import Foundation
 
 // Catches requests to the mock host and answers them from MockServer, so nothing goes over the network.
 final class MockURLProtocol: URLProtocol {
+    // Only handle requests to the mock host.
     override static func canInit(with request: URLRequest) -> Bool {
         request.url?.host == MockServer.host
     }
 
+    // Required by URLProtocol. The request is used as is.
     override static func canonicalRequest(for request: URLRequest) -> URLRequest {
         request
     }
 
+    // Gets the answer from MockServer and hands it back to URLSession.
     override func startLoading() {
         guard let url = request.url else {
             client?.urlProtocol(self, didFailWithError: URLError(.badURL))
@@ -39,6 +42,7 @@ final class MockURLProtocol: URLProtocol {
         client?.urlProtocolDidFinishLoading(self)
     }
 
+    // Nothing to stop, the answer is sent right away.
     override func stopLoading() {}
 
     // URLSession often moves httpBody into a stream before it reaches a URLProtocol.

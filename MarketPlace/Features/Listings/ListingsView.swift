@@ -1,5 +1,6 @@
 import SwiftUI
 
+// The main screen: listings with search, pull to refresh and a + button.
 struct ListingsView: View {
     @Environment(ListingRepository.self) private var repository
     @Environment(SyncEngine.self) private var syncEngine

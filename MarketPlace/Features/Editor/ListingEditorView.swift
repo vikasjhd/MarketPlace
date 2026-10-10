@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftUI
 
+// The form for creating or editing a listing.
 struct ListingEditorView: View {
     @Environment(ListingRepository.self) private var repository
     @Environment(SyncEngine.self) private var syncEngine
@@ -84,6 +85,7 @@ struct ListingEditorView: View {
         }
     }
 
+    // Photo thumbnails with remove buttons, plus library and camera buttons.
     private var photosSection: some View {
         Section("Photos") {
             if !viewModel.draft.images.isEmpty {
@@ -126,6 +128,7 @@ struct ListingEditorView: View {
         }
     }
 
+    // Red error text under a field, if that field has a problem.
     @ViewBuilder
     private func errorText(for field: ValidationIssue.Field) -> some View {
         if let message = viewModel.message(for: field) {
@@ -135,6 +138,7 @@ struct ListingEditorView: View {
         }
     }
 
+    // Validates and saves, then closes the editor and starts a sync.
     private func save() {
         Task {
             await run {
@@ -146,6 +150,7 @@ struct ListingEditorView: View {
         }
     }
 
+    // Cleans up new photo files and closes the editor.
     private func cancel() {
         Task {
             await viewModel.cancel(fileStore: fileStore)

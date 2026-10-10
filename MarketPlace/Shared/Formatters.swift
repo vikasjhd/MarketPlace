@@ -12,6 +12,7 @@ enum Formatters {
         return formatter
     }()
 
+    // Formats paise as rupees, e.g. 150050 becomes ₹1,500.50.
     static func price(cents: Int) -> String {
         priceFormatter.string(from: NSNumber(value: Double(cents) / 100)) ?? ""
     }

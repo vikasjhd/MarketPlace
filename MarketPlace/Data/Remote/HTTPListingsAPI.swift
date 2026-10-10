@@ -1,5 +1,6 @@
 import Foundation
 
+// Talks to the server over HTTP. Adds the token and turns status codes into APIError.
 final class HTTPListingsAPI: ListingsAPI {
     private let session: URLSession
     private let keychain: KeychainStore
@@ -9,6 +10,7 @@ final class HTTPListingsAPI: ListingsAPI {
         self.keychain = keychain
     }
 
+    // Uploads one photo as JPEG and returns its server URL.
     func uploadImage(id: UUID, jpeg: Data) async throws -> URL {
         var request = try await authorizedRequest(path: "/images/\(id.uuidString)", method: "PUT")
         request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
@@ -17,14 +19,17 @@ final class HTTPListingsAPI: ListingsAPI {
         return try decode(UploadResponse.self, from: data).url
     }
 
+    // Sends a new listing (POST).
     func create(_ dto: ListingDTO) async throws -> ListingDTO {
         try await sendListing(dto, path: "/listings", method: "POST")
     }
 
+    // Sends an edited listing (PUT).
     func update(_ dto: ListingDTO) async throws -> ListingDTO {
         try await sendListing(dto, path: "/listings/\(dto.id.uuidString)", method: "PUT")
     }
 
+    // Asks for listings changed after the given revision.
     func changes(since revision: Int) async throws -> ChangesResponse {
         let query = [URLQueryItem(name: "sinceRevision", value: String(revision))]
         let request = try await authorizedRequest(path: "/listings", method: "GET", query: query)
@@ -32,6 +37,7 @@ final class HTTPListingsAPI: ListingsAPI {
         return try decode(ChangesResponse.self, from: data)
     }
 
+    // Sends a listing as JSON and reads back the server's copy.
     private func sendListing(_ dto: ListingDTO, path: String, method: String) async throws -> ListingDTO {
         var request = try await authorizedRequest(path: path, method: method)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -40,6 +46,7 @@ final class HTTPListingsAPI: ListingsAPI {
         return try decode(ListingDTO.self, from: data)
     }
 
+    // Builds a request with the Bearer token.
     private func authorizedRequest(
         path: String,
         method: String,
@@ -63,6 +70,7 @@ final class HTTPListingsAPI: ListingsAPI {
         return token
     }
 
+    // Runs the request and maps the HTTP status to data or an APIError.
     private func send(_ request: URLRequest) async throws -> Data {
         let data: Data
         let response: URLResponse
@@ -95,6 +103,7 @@ final class HTTPListingsAPI: ListingsAPI {
         }
     }
 
+    // Turns network errors into APIError, and cancel into CancellationError.
     private func mapped(_ error: URLError) -> Error {
         switch error.code {
         case .notConnectedToInternet, .networkConnectionLost, .timedOut:
@@ -106,6 +115,7 @@ final class HTTPListingsAPI: ListingsAPI {
         }
     }
 
+    // Builds a full URL for the mock host.
     private func makeURL(path: String, query: [URLQueryItem] = []) throws -> URL {
         var components = URLComponents()
         components.scheme = "https"
@@ -120,6 +130,7 @@ final class HTTPListingsAPI: ListingsAPI {
         return url
     }
 
+    // Reads JSON, or throws .decoding if it doesn't match.
     private func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
         do {
             return try JSONDecoder.api.decode(type, from: data)

@@ -1,10 +1,12 @@
 import Foundation
 import Security
 
+// Saves the auth token in the Keychain, the safe place for secrets on iOS.
 struct KeychainStore: Sendable {
     private let service = "com.vikassaini.MarketPlace"
     private let account = "authToken"
 
+    // Returns the saved token, or nil if there is none.
     func readToken() -> String? {
         var query = baseQuery()
         query[kSecReturnData as String] = true
@@ -18,6 +20,7 @@ struct KeychainStore: Sendable {
         return String(data: data, encoding: .utf8)
     }
 
+    // Saves the token, replacing any old one.
     func saveToken(_ token: String) throws {
         deleteToken()
         var query = baseQuery()
@@ -31,10 +34,12 @@ struct KeychainStore: Sendable {
         }
     }
 
+    // Removes the token.
     func deleteToken() {
         SecItemDelete(baseQuery() as CFDictionary)
     }
 
+    // The Keychain fields that identify our one token item.
     private func baseQuery() -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,

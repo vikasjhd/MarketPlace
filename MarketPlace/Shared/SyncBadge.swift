@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Small label on a row: Pending or Failed. Nothing when synced.
 struct SyncBadge: View {
     let state: SyncState
 

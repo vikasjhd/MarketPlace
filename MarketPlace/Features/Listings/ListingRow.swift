@@ -1,5 +1,6 @@
 import SwiftUI
 
+// One row in the list: photo, title, price, category and sync status.
 struct ListingRow: View {
     let listing: Listing
 

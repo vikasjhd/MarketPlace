@@ -1,5 +1,6 @@
 import Foundation
 
+// The editable fields of a listing while the user types in the editor.
 struct ListingDraft: Equatable, Sendable {
     var title = ""
     var details = ""
