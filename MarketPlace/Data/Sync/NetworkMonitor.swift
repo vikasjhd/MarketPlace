@@ -4,7 +4,7 @@ import Observation
 
 // A protocol so tests can switch "online" on and off.
 @MainActor
-protocol Connectivity: AnyObject {
+protocol Connectivity {
     var isOnline: Bool { get }
 }
 

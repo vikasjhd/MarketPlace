@@ -1,11 +1,11 @@
 import UIKit
 
-// Gives views images at the size they need, with a memory cache and a disk cache.
+// Gives views images at the size they need, using NSCache (RAM) and the Caches folder (phone storage).
 actor ImageLoader {
     private let fileStore: ImageFileStore
     private let session: URLSession
     private let cacheFolder: URL
-    // Decoded images in memory. iOS clears it when memory is low.
+    // NSCache: shrunk images kept in RAM. iOS empties it when memory is low.
     private let cache = NSCache<NSString, UIImage>()
 
     init(fileStore: ImageFileStore, session: URLSession, cacheFolder: URL) {
@@ -32,7 +32,7 @@ actor ImageLoader {
         return result
     }
 
-    // Order: my own photo on this phone, then the disk cache, then download.
+    // Order: my own photo in Application Support, then the Caches folder, then download.
     private func imageData(for image: ListingImage) async -> Data? {
         if let filename = image.localFilename, let data = try? await fileStore.read(filename) {
             return data

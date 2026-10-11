@@ -73,6 +73,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 000000000000000110000000 /* Build configuration list for PBXNativeTarget "MarketPlace" */;
 			buildPhases = (
+				75F7EEF5307BA4E500D259BD /* SwiftLint */,
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
@@ -159,6 +160,26 @@
 			);
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		75F7EEF5307BA4E500D259BD /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			name = SwiftLint;
+			shellPath = /bin/sh;
+			shellScript = (
+				"# Homebrew installs swiftlint here on Apple silicon Macs.",
+				"export PATH=\"$PATH:/opt/homebrew/bin\"",
+				"cd \"$SRCROOT\"",
+				"if which swiftlint >/dev/null; then",
+				"  swiftlint",
+				"else",
+				"  echo \"warning: SwiftLint not installed. Run: brew install swiftlint\"",
+				"fi",
+				"",
+			);
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		000000000000000120000000 /* Sources */ = {
@@ -322,10 +343,11 @@
 				DEVELOPMENT_TEAM = 5YU8GPACWD;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = MarketPlace;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MarketPlace;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take photos of items you want to sell.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -367,10 +389,11 @@
 				DEVELOPMENT_TEAM = 5YU8GPACWD;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = MarketPlace;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MarketPlace;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take photos of items you want to sell.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

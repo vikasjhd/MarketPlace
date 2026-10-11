@@ -142,6 +142,7 @@ final class ListingRepository {
 
     // Saves listings that came from the server, in one batch.
     func applyPulled(_ serverListings: [Listing]) throws {
+        guard !serverListings.isEmpty else { return }
         let records = try context.fetch(FetchDescriptor<ListingRecord>())
         let recordsByID = Dictionary(uniqueKeysWithValues: records.map { ($0.id, $0) })
 
