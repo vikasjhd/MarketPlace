@@ -1,94 +1,93 @@
 # Engineering standards
 
-The rules this project follows. Short version: keep it simple, keep it readable, keep it safe.
+The rules I followed in this project. Mostly: keep it simple and easy to read.
 
 ## Platform and tools
 
-- iOS 17.0+, iPhone, portrait and landscape.
-- Swift 5 language mode, strict concurrency checking `complete`, warnings treated as errors. The build must have 0 warnings.
-- SwiftUI with Observation (`@Observable`, `@State`, `@Environment`). No Combine, no `ObservableObject`.
-- Apple frameworks only. No third-party packages.
-- SwiftLint with the default rules, run with `--strict`.
+- iOS 17+, iPhone only, portrait and landscape.
+- Swift 5 with strict concurrency checking set to complete. The build has 0 warnings.
+- SwiftUI with Observation (`@Observable`). No `ObservableObject`.
+- Only Apple frameworks. No third-party packages.
+- SwiftLint with its default rules. It runs as a build phase in Xcode, and with `--strict` in the terminal and on CI.
 
 ## Architecture
 
-- Layers: Features → Domain + Data. Data → Domain. Domain depends on Foundation only.
-- SwiftData is imported only in `Data/Local/`. The rest of the app uses plain `Listing` structs.
-- One type owns each job: `ListingRepository` (local data), `SyncEngine` (sync), `HTTPListingsAPI` (network), `ImageFileStore` (photo files), `ImageLoader` (displaying images).
-- Pass dependencies in through `init` or the SwiftUI environment. No hidden state.
-- Add a protocol only when a test needs a fake (`ListingsAPI`, `Connectivity`).
-- No extra layers, base classes or generic helpers unless there is a clear need.
+- Features use Domain and Data. Data uses Domain. Domain only uses Foundation.
+- Only `Data/Local` imports SwiftData. The rest of the app works with the `Listing` struct.
+- Each job has one owner:
+  - `ListingRepository`: local data
+  - `SyncEngine`: syncing
+  - `HTTPListingsAPI`: network calls
+  - `ImageFileStore`: photo files
+  - `ImageLoader`: images on screen
+- Dependencies are passed in through `init` or the SwiftUI environment. There are only three shared instances: `ImageFileStore.app`, `URLSession.mock` and `MockServer.shared`.
+- Protocols only where a test needs a fake: `ListingsAPI` and `Connectivity`.
+- No extra layers or base classes.
 
 ## Code style
 
-- `final` classes by default.
-- No force unwraps, force casts or `try!` in app code (tests may use them).
-- `fatalError` only if the database can't be opened at launch.
-- No `print`. Use `os.Logger` (`Log.sync`).
-- Files under 400 lines, functions under 50 lines (SwiftLint default). One main type per file.
-- View model `init` does no work. Work starts in `.task` or from a user action.
+- Classes are `final`.
+- No force unwraps, force casts or `try!` in app code. Tests can use them.
+- `fatalError` is used in one place: when the database can't be opened at launch.
+- No `print`. Logging goes through `os.Logger` (`Log.sync`).
+- Files stay under 400 lines and functions under 50 lines (SwiftLint defaults). One main type per file.
+- A view model's `init` only sets values. Real work starts in `.task` or after a user action.
 - Dependencies inside `@Observable` classes are `@ObservationIgnored private let`.
-- `.onChange(of:)` uses the two-parameter form.
-- Plain, readable code over clever code.
-- Comments: one short line above each type and each non-obvious function, saying what it is and does. A short "why" line where a choice isn't obvious. No comments on obvious lines.
+- `.onChange(of:)` uses the version with old and new values.
+- Readable code.
+- One short comment above each type and each function that isn't obvious.
 
 ## Concurrency
 
-- Main actor: views, view models, `ListingRepository`, `SyncEngine`, `NetworkMonitor`.
-- Actors: `ImageFileStore`, `ImageLoader`. Disk and image work happens there, never on the main thread.
-- No `DispatchQueue.main.async`, no `Task.detached`.
+- On the main actor: views, view models, `ListingRepository`, `SyncEngine`, `NetworkMonitor`.
+- `ImageFileStore` and `ImageLoader` are actors, so photo files and image decoding stay off the main thread.
+- No `DispatchQueue.main.async` and no `Task.detached`.
 - No `@unchecked Sendable`, `nonisolated(unsafe)` or `@preconcurrency`.
-- Cancellation is not an error. `CancellationError` never becomes a failure state.
 
 ## Data and sync rules
 
-1. Create vs update comes from `revision == nil` (POST) or not (PUT).
-2. `updatedAt` changes only on user create or edit.
-3. Favorites are local only and never sent to the server.
-4. Pull never overwrites a pending or failed local listing.
-5. `markSynced` and `markFailed` only change state if `updatedAt` is still the pushed value.
-6. The pull cursor moves only after pulled data is saved.
-7. Push photos first, then the listing, then pull. Temporary errors never mark a listing failed.
-8. A 409 means the server copy won. The app applies it.
-9. Save the SwiftData context after every change.
+1. No server `revision` means POST. Otherwise PUT.
+2. `updatedAt` changes only when the user creates or edits a listing.
+3. Favorites stay on the device and are never sent.
+4. A pull never overwrites a listing that is pending or failed.
+5. `markSynced` and `markFailed` only change the state if `updatedAt` is still what we pushed.
+6.  Photos go first, then the listing, then the pull. Temporary errors never mark a listing as failed.
+7. The SwiftData context is saved after every change.
 
 ## Errors
 
 - Storage and network errors are thrown, not hidden.
 - Screens show errors in an alert.
 - Sync errors show in the status bar with a Retry button.
-- API errors are mapped to `APIError` (offline, server, unauthorized, conflict, validation, unexpected status, decoding).
-- Image loading may fail quietly: the view shows a placeholder and the listing is not affected.
+- Network errors become an `APIError`: offline, server, unauthorized, conflict, validation, unexpected status or decoding.
+- If an image fails to load, the view shows a placeholder. The listing isn't affected.
 
 ## Security
 
-- The auth token lives only in the Keychain (`AfterFirstUnlock`). It is never logged.
-- `os.Logger` keeps interpolated values private by default.
-- App Transport Security stays on. The mock host uses `https`.
-- User input is validated in the app and again by the server.
-- Server responses are checked: status code first, then decode. Bad data is an error, never a crash.
+- The auth token is only stored in the Keychain (`AfterFirstUnlock`) and is never logged.
+- `os.Logger` hides interpolated values by default.
+- App Transport Security is on. The mock host uses `https`.
+-  Responses are checked by status code first, then decoded. Bad data gives an error, not a crash.
 
 ## Money and dates
 
-- Prices are `Int` paise (`priceCents`), shown as INR with the `en_IN` locale.
-- JSON dates are epoch milliseconds.
+- Prices are stored as `Int` paise (`priceCents`) and shown in ₹.
+- Dates in JSON are milliseconds since 1970.
 
 ## Testing
 
 - XCTest.
-- Unit tests cover sync logic (`SyncEngineTests`).
-- Use fakes (`FakeListingsAPI`, `FakeConnectivity`) and an in-memory database. No real network.
-- No sleeps or timing-based waits.
-- Test names say what they check, for example `test_offline_keepsListingPending_andMakesNoCalls`.
+- Unit tests cover the sync logic (`SyncEngineTests`) only.
+- Tests use fakes (`FakeListingsAPI`, `FakeConnectivity`) and an in-memory database. No real network.
+- No sleeps or waiting on timers.
+- Test names say what they check, like `test_offline_keepsListingPending_andMakesNoCalls`.
 
-## Definition of done
+## What done means: 
 
-- Builds with 0 warnings.
-- `swiftlint lint --strict` is clean.
+- 0 warnings.
+- `swiftlint lint --strict` passes.
 - All tests pass.
-- Docs updated if behavior changed.
 
-## Git
+## CI
 
-- Conventional commit messages: `feat:`, `fix:`, `test:`, `docs:`, `chore:`.
-- CI runs lint, build and tests on every push and pull request.
+- GitHub Actions runs lint, build and tests on every push and pull request.

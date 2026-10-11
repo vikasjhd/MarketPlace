@@ -2,29 +2,33 @@
 
 ## Layers
 
-| Layer | Folder | What it does |
+| Layer | Folder | What's in it |
 |---|---|---|
-| App | `App/` | Creates the shared objects, injects them, sync triggers, background task |
-| Features | `Features/` | SwiftUI screens and their view models |
-| Shared | `Shared/` | Small reusable views (thumbnail, status bar, badge), formatters, logging |
+| App | `App/` | App entry, creates the shared objects, sync triggers, background task |
+| Features | `Features/` | Screens and their view models |
+| Shared | `Shared/` | Small views used in several places (thumbnail, status bar, badge), formatters, logging |
 | Domain | `Domain/` | Plain models (`Listing`, `ListingDraft`, ...) and `ListingValidator`. Foundation only |
-| Data / Local | `Data/Local/` | SwiftData model, `ListingRepository`, `ImageFileStore`. The only place that imports SwiftData |
-| Data / Remote | `Data/Remote/` | `ListingsAPI` protocol, `HTTPListingsAPI`, DTOs, Keychain, mock server |
+| Data / Local | `Data/Local/` | SwiftData model, `ListingRepository`, `ImageFileStore`. The only folder that imports SwiftData |
+| Data / Remote | `Data/Remote/` | `ListingsAPI`, `HTTPListingsAPI`, DTOs, Keychain, mock server |
 | Data / Sync | `Data/Sync/` | `SyncEngine`, `NetworkMonitor` |
 | Data / Images | `Data/Images/` | `ImageDownsampler`, `ImageLoader` |
 
 Rules:
 
-- Views read state and forward user actions. No storage or network calls in views.
-- `ListingRepository` is the only type that reads or writes listings. It returns `Listing` structs, never SwiftData objects.
-- Dependencies are passed in (`init` or SwiftUI environment), so tests can swap them.
-- Protocols only where tests need a fake: `ListingsAPI` and `Connectivity`.
+- Views don't use SwiftData or `URLSession` directly. They go through the repository, the sync engine and the image loader.
+- `ListingRepository` is the only type that reads and writes listings. It returns `Listing` structs, never SwiftData objects.
+- Dependencies are passed in, so tests can replace them.
+- Protocols only where tests need a fake `ListingsAPI` and `Connectivity`.
 
 ## Diagram
 
 ```mermaid
 flowchart TD
-    subgraph UI["Features (SwiftUI)"]
+    subgraph App
+        Root[RootView]
+    end
+
+    subgraph UI["Screens"]
         LV[ListingsView + ViewModel]
         DV[ListingDetailView]
         EV[ListingEditorView + ViewModel]
@@ -51,13 +55,22 @@ flowchart TD
         Server[MockServer]
     end
 
+    Root --> Repo
+    Root --> Sync
+    Root --> Net
+
     LV --> Repo
+    LV --> Sync
+    LV --> Loader
     DV --> Repo
+    DV --> Loader
     EV --> Repo
     EV --> Files
-    LV --> Loader
+    EV --> Sync
+    EV --> Loader
     SB --> Sync
     SB --> Net
+    SB --> Repo
 
     Sync --> Repo
     Sync --> API
@@ -79,6 +92,7 @@ flowchart TD
 sequenceDiagram
     actor User
     participant Editor as ListingEditorView
+    participant Root as RootView
     participant Repo as ListingRepository
     participant Sync as SyncEngine
     participant Net as NetworkMonitor
@@ -94,7 +108,8 @@ sequenceDiagram
     Sync-->>Editor: status = offline (listing stays pending)
 
     Note over Net: Network comes back
-    Net->>Sync: isOnline turns true, which triggers sync()
+    Net-->>Root: isOnline = true
+    Root->>Sync: sync()
     Sync->>Repo: pendingListings()
     Sync->>API: uploadImage(id, jpeg)
     API->>Server: PUT /images/{id}
@@ -133,38 +148,37 @@ sequenceDiagram
 
 ## Sync rules
 
-- The queue is the listings with `syncState == .pending`, oldest first.
-- Push photos first, then the listing, so the listing is sent with photo URLs.
-- `revision == nil` → POST, else PUT. No extra "isNew" flag.
-- `updatedAt` changes only on user edits. Favorites and sync don't change it.
-- `markSynced` / `markFailed` only change state if `updatedAt` is still the pushed value. If the user edited during the push, the newer edit stays pending.
-- Pull never overwrites a pending or failed local listing. It keeps the local favorite flag and local photo files.
-- The pull cursor (`lastPulledRevision`) moves only after pulled data is saved.
-- Temporary errors (offline, 5xx, 401, bad JSON) stop the run and keep listings pending. 422 / other 4xx mark only that listing failed.
-- Only one sync runs at a time. A sync requested during a run causes one more round.
-- Server: POST with an existing id acts like PUT, so retries can't create duplicates.
+- Listings with `syncState == .pending` are the queue, oldest first.
+- Photos are uploaded first, then the listing, so the listing is sent with photo URLs.
+- No `revision` means POST, otherwise PUT. 
+- `updatedAt` only changes on user edits. Favorites and syncing don't touch it.
+- `markSynced` and `markFailed` only change the state if `updatedAt` is still what we pushed. If the user edited during the push, the newer edit stays pending.
+- A pull never overwrites a pending or failed listing. It keeps the local favorite and local photo files.
+-  Temporary errors (offline, 5xx, 401, bad JSON) stop the sync and keep listings pending.
+- Only one sync runs at a time. If another is asked for during a sync, it runs once more after.
+- On the server, a POST with an existing id works like a PUT, so a retry can't create a duplicate.
 
 ## Concurrency
 
 | Type | Runs on |
 |---|---|
 | Views, view models, `ListingRepository`, `SyncEngine`, `NetworkMonitor` | Main actor |
-| `ImageFileStore`, `ImageLoader` | Their own actors (off the main thread) |
-| `MockServer` | Any thread; state behind one lock |
-| Network calls | `URLSession` (async/await) |
+| `ImageFileStore`, `ImageLoader` | Their own actors, off the main thread |
+| `MockServer` | Any thread, with its data behind one lock |
+| Network calls | `URLSession` with async/await |
 
-- Swift 5 mode with strict concurrency checking set to complete, and warnings treated as errors.
+- Swift 5 with strict concurrency checking set to complete. 
 - No `DispatchQueue.main.async`, no `Task.detached`, no `@unchecked Sendable`.
 
-## Key decisions and trade-offs
+## Decisions and trade-offs
 
 | Decision | Why | Trade-off |
 |---|---|---|
-| SwiftData behind a repository | Native, simple; views never see the database | iOS 17+ only |
-| Pending rows as the queue | One source of truth, survives app restarts | No separate retry schedule |
-| Server-decided last write wins | Simple to explain and implement | Device clock skew can pick the wrong winner |
-| Revision cursor for pull | Only changed listings are downloaded | Server must keep a global counter |
-| Mock server via `URLProtocol` | Real HTTP code runs; no external server needed | Offline doesn't make requests fail by itself |
-| `NSCache` + disk cache for images | Bounded memory, each image downloaded once | Cache can be cleared by iOS, then it re-downloads |
-| App refresh for background sync | Simple SwiftUI API | iOS decides when it runs |
-| One fixed currency (INR), price in paise as `Int` | No rounding errors, no currency field | Not multi-currency |
+| SwiftData behind a repository | Built into iOS and simple. Views never see the database. | Needs iOS 17+ |
+| Pending listings are the queue | One source of truth that survives app restarts | No separate retry schedule |
+| Last write wins, decided by the server | Simple to build | A wrong device clock can pick the wrong winner |
+| Revision | Only changed listings are downloaded | The server has to keep a global counter |
+| Mock server through `URLProtocol` | The real HTTP code | Going offline doesn't make requests fail on its own |
+| `NSCache` plus the Caches folder for images | Memory stays limited and each image downloads once | If iOS clears the cache, images download again |
+| Background app refresh | Simple SwiftUI API | iOS decides when it runs |
+|  |
