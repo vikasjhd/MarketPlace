@@ -9,7 +9,6 @@ final class ListingRecord {
     var details: String
     var priceCents: Int
     var category: Category
-    // Images are stored as JSON to avoid iOS 17 issues with arrays of Codable structs.
     var imagesData: Data
     var ownerID: String
     var createdAt: Date
