@@ -64,13 +64,13 @@ final class MockServer: Sendable {
         }
 
         switch (method, parts.count) {
-        case ("GET", 1) where parts[0] == "listings":
+        case ("GET", 1) where parts.first == "listings":
             return changesResponse(url: url)
-        case ("POST", 1) where parts[0] == "listings":
+        case ("POST", 1) where parts.first == "listings":
             return saveListing(body: body)
-        case ("PUT", 2) where parts[0] == "listings":
+        case ("PUT", 2) where parts.first == "listings":
             return saveListing(body: body)
-        case ("PUT", 2) where parts[0] == "images":
+        case ("PUT", 2) where parts.first == "images":
             return uploadImage(idText: parts[1], body: body)
         default:
             return errorResponse(status: 404, message: "Not found.")
