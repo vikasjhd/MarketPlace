@@ -2,6 +2,10 @@
 
 An offline-first marketplace app for iOS. Browse listings, mark favorites, and create or edit your own listings with photos, even without a network. Changes sync when the app is online again.
 
+## Demo video
+
+[Watch the 3-minute demo (Google Drive)](https://drive.google.com/file/d/1jLT2Mp6afPrCbjC700qgy40ABoaVGpjT/view?usp=share_link)
+
 ## Features
 
 - Browse about 200 listings, search by title, open details with a photo gallery.
@@ -94,6 +98,10 @@ Measured in the Simulator (iPhone 16 Pro, iOS 18.6):
 | Memory after fast scrolling to the end of the list and back | 47 MB (peak 49 MB) |
 | Disk cache after all 200 seeded images loaded (`Caches/RemoteImages`) | 2.6 MB |
 | Saved photo size (max 1600 px, JPEG 0.8) | 1600×1200 ≈ 0.9 MB, 1600×1068 ≈ 0.5 MB |
+
+Instruments recording in the Simulator (Time Profiler and Hangs):
+
+![Instruments recording in the Simulator](docs/InstrumentProcess.png)
 
 - Image downsampling runs on background threads (`ImageLoader` actor), not on the main thread.
 - Repository work on the main thread (`ListingRepository`): about 250 ms in total over the session.
